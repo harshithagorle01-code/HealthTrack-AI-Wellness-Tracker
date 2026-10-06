@@ -147,10 +147,10 @@ paths:
       parameters:
         - in: query
           name: startDate
-          schema: { type: string, format: date }
+          schema: { type: string, pattern: "^\\d{4}-\\d{2}-\\d{2}$" }
         - in: query
           name: endDate
-          schema: { type: string, format: date }
+          schema: { type: string, pattern: "^\\d{4}-\\d{2}-\\d{2}$" }
         - in: query
           name: limit
           schema: { type: integer, minimum: 1, maximum: 100, default: 30 }
@@ -232,7 +232,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Message"
-        "404":
+        "403":
           $ref: "#/components/responses/ErrorResponse"
   /v1/goals:
     get:
@@ -287,7 +287,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Goal"
-        "404":
+        "403":
           $ref: "#/components/responses/ErrorResponse"
     delete:
       operationId: deleteGoal
@@ -302,7 +302,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Message"
-        "404":
+        "403":
           $ref: "#/components/responses/ErrorResponse"
   /v1/reminders:
     get:
@@ -355,7 +355,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Reminder"
-        "404":
+        "403":
           $ref: "#/components/responses/ErrorResponse"
     delete:
       operationId: deleteReminder
@@ -551,7 +551,7 @@ components:
       type: object
       properties:
         id: { type: string, format: uuid }
-        date: { type: string, format: date }
+        date: { type: string, pattern: "^\\d{4}-\\d{2}-\\d{2}$" }
         waterMl: { type: integer }
         steps: { type: integer }
         exerciseMinutes: { type: integer }
@@ -571,7 +571,7 @@ components:
     HealthRecordInput:
       type: object
       properties:
-        date: { type: string, format: date }
+        date: { type: string, pattern: "^\\d{4}-\\d{2}-\\d{2}$" }
         waterMl: { type: integer, minimum: 0 }
         steps: { type: integer, minimum: 0 }
         exerciseMinutes: { type: integer, minimum: 0 }
@@ -600,8 +600,8 @@ components:
         goalType: { type: string, enum: [water_ml, steps, exercise_min, sleep_hrs, weight_kg, calories_kcal] }
         targetValue: { type: number }
         currentValue: { type: number }
-        startDate: { type: string, format: date }
-        endDate: { type: ["string", "null"], format: date }
+        startDate: { type: string, pattern: "^\\d{4}-\\d{2}-\\d{2}$" }
+        endDate: { type: ["string", "null"], pattern: "^\\d{4}-\\d{2}-\\d{2}$" }
         status: { type: string, enum: [active, completed, abandoned] }
       required: [id, goalType, targetValue, currentValue, startDate, endDate, status]
     GoalInput:
@@ -609,15 +609,15 @@ components:
       properties:
         goalType: { type: string, enum: [water_ml, steps, exercise_min, sleep_hrs, weight_kg, calories_kcal] }
         targetValue: { type: number, exclusiveMinimum: 0 }
-        startDate: { type: string, format: date }
-        endDate: { type: ["string", "null"], format: date }
+        startDate: { type: string, pattern: "^\\d{4}-\\d{2}-\\d{2}$" }
+        endDate: { type: ["string", "null"], pattern: "^\\d{4}-\\d{2}-\\d{2}$" }
       required: [goalType, targetValue, startDate]
     GoalUpdate:
       type: object
       properties:
         targetValue: { type: number, exclusiveMinimum: 0 }
         currentValue: { type: number, minimum: 0 }
-        endDate: { type: ["string", "null"], format: date }
+        endDate: { type: ["string", "null"], pattern: "^\\d{4}-\\d{2}-\\d{2}$" }
         status: { type: string, enum: [active, completed, abandoned] }
     Reminder:
       type: object

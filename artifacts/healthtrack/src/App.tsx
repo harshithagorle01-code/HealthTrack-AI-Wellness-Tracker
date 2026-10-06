@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { CSSProperties, FormEvent, ReactNode } from 'react';
 import { QueryClient, QueryClientProvider, useQueryClient } from '@tanstack/react-query';
 import { Link, Route, Switch, useLocation } from 'wouter';
@@ -26,8 +26,48 @@ import type {
 
 const queryClient = new QueryClient({ defaultOptions: { queries: { staleTime: 45_000, retry: 1, refetchOnWindowFocus: false } } });
 const disclaimer = 'HealthTrack AI is for general wellness information only, not medical advice, diagnosis, or treatment.';
-const todayISO = () => new Date().toISOString().slice(0, 10);
+const todayISO = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
 const fmt = (n?: number | null, digits = 0) => Number.isFinite(n) ? Number(n).toLocaleString(undefined, { maximumFractionDigits: digits }) : '—';
+const suggestedGoals = (weightKg: number | null, activityLevel: string, age: number | null) => {
+  const waterByActivity: Record<string, { steps: number; exercise: number }> = {
+    sedentary: { steps: 6000, exercise: 20 },
+    light: { steps: 7000, exercise: 25 },
+    moderate: { steps: 8000, exercise: 30 },
+    active: { steps: 9500, exercise: 40 },
+    very_active: { steps: 11000, exercise: 50 },
+  };
+  const activity = waterByActivity[activityLevel] || waterByActivity.moderate;
+  const waterGoalMl = weightKg && (age == null || age >= 18)
+    ? Math.max(1500, Math.min(4000, Math.round((weightKg * 30) / 250) * 250))
+    : 2200;
+  return { waterGoalMl, stepsGoal: activity.steps, exerciseGoalMinutes: activity.exercise };
+};
+function flattenExportRow(value: unknown, prefix = '', result: Record<string, string> = {}): Record<string, string> {
+  if (value && typeof value === 'object' && !Array.isArray(value)) {
+    for (const [key, nested] of Object.entries(value as Record<string, unknown>)) {
+      flattenExportRow(nested, prefix ? `${prefix}.${key}` : key, result);
+    }
+  } else if (prefix) {
+    result[prefix] = value == null ? '' : typeof value === 'object' ? JSON.stringify(value) : String(value);
+  }
+  return result;
+}
+function exportAsCsv(value: unknown): string {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error('The export data could not be read.');
+  const rows: Array<Record<string, string>> = [];
+  for (const [section, data] of Object.entries(value as Record<string, unknown>)) {
+    if (Array.isArray(data)) {
+      for (const item of data) rows.push({ section, ...flattenExportRow(item) });
+    } else if (data && typeof data === 'object') {
+      rows.push({ section, ...flattenExportRow(data) });
+    }
+  }
+  const columns = ['section', ...new Set(rows.flatMap(row => Object.keys(row).filter(key => key !== 'section')))];
+  const quote = (cell: string) => `"${cell.replaceAll('"', '""')}"`;
+  return '\uFEFF' + [columns, ...rows.map(row => columns.map(column => row[column] || ''))]
+    .map(row => row.map(quote).join(','))
+    .join('\r\n');
+}
 const errorText = (e: unknown) => e instanceof Error ? e.message : 'Something went wrong. Please try again.';
 
 function Notice({ text, clear }: { text: string; clear: () => void }) {
@@ -40,7 +80,7 @@ function Disclaimer({ compact = false }: { compact?: boolean }) {
 }
 
 function Brand({ dark = false }: { dark?: boolean }) {
-  return <Link href="/" className={`brand ${dark ? 'brand-dark' : ''}`}><span className="brand-mark"><Sprout size={19} strokeWidth={2.1} /></span><span>wellnest<span className="brand-ai">AI</span></span></Link>;
+  return <Link href="/" className={`brand ${dark ? 'brand-dark' : ''}`}><span className="brand-mark"><Sprout size={19} strokeWidth={2.1} /></span><span>HealthTrack<span className="brand-ai"> AI</span></span></Link>;
 }
 
 const navItems = [
@@ -123,7 +163,7 @@ function AuthPage({ mode }: { mode: 'login' | 'register' }) {
           {error && <p className="form-error" role="alert">{error}</p>}
           <button className="btn btn-primary auth-submit" type="submit" disabled={auth.isPending} data-testid="button-auth-submit">{auth.isPending ? 'One moment…' : isLogin ? 'Sign in' : 'Create my account'}<ArrowRight size={17} /></button>
         </form>
-        <div className="auth-switch">{isLogin ? 'New to Wellnest?' : 'Already have a space?'} <Link href={isLogin ? '/register' : '/login'}>{isLogin ? 'Create an account' : 'Sign in'}</Link></div>
+        <div className="auth-switch">{isLogin ? 'New to HealthTrack?' : 'Already have a space?'} <Link href={isLogin ? '/register' : '/login'}>{isLogin ? 'Create an account' : 'Sign in'}</Link></div>
         <Disclaimer />
       </div></div>
     </div>
@@ -133,14 +173,14 @@ function AuthPage({ mode }: { mode: 'login' | 'register' }) {
 function Landing() {
   return <div className="landing grain">
     <header className="landing-nav wrap"><Brand /><nav><a href="#approach">Our approach</a><a href="#how">How it works</a><Link href="/login">Sign in</Link></nav><Link href="/register" className="btn btn-primary">Begin your story <ArrowRight size={16} /></Link></header>
-    <section className="hero wrap"><div className="hero-copy"><div className="eyebrow"><span className="status-dot" />YOUR HEALTH, WITH ROOM TO BREATHE</div><h1 className="serif">Better days are<br />built <i>gently.</i></h1><p>Wellnest helps you notice the little things that shape how you feel—so you can care for yourself with more clarity and less pressure.</p><div className="hero-actions"><Link href="/register" className="btn btn-primary">Make a little space <ArrowRight size={17} /></Link><a className="text-link" href="#approach">See how it feels <ChevronRight size={16} /></a></div><div className="hero-proof"><div className="proof-leaves"><Sprout size={17} /></div><span>Made for real life, not perfect streaks.</span></div></div>
+    <section className="hero wrap"><div className="hero-copy"><div className="eyebrow"><span className="status-dot" />YOUR HEALTH, WITH ROOM TO BREATHE</div><h1 className="serif">Better days are<br />built <i>gently.</i></h1><p>HealthTrack helps you notice the little things that shape how you feel—so you can care for yourself with more clarity and less pressure.</p><div className="hero-actions"><Link href="/register" className="btn btn-primary">Make a little space <ArrowRight size={17} /></Link><a className="text-link" href="#approach">See how it feels <ChevronRight size={16} /></a></div><div className="hero-proof"><div className="proof-leaves"><Sprout size={17} /></div><span>Made for real life, not perfect streaks.</span></div></div>
       <div className="hero-visual"><div className="visual-sun" /><div className="hero-leaf leaf-1" /><div className="hero-leaf leaf-2" /><div className="hero-card"><div className="hc-head"><span>YOUR TUESDAY, SO FAR</span><span className="hc-date">TODAY</span></div><div className="hc-greeting serif">A steady kind<br />of day.</div><div className="hc-score-row"><div className="score-ring"><span>76</span><small>feeling good</small></div><div className="hc-note"><span className="tiny-check"><Check size={13} /></span><span>You made time<br />to move today.</span></div></div><div className="hc-metrics"><div><span className="metric-glyph water"><Droplets size={15} /></span><span>Water</span><b>1.4 <small>/ 2.2 L</small></b><div className="progress-track"><div className="progress-fill" style={{ width: '64%' }} /></div></div><div><span className="metric-glyph steps"><Footprints size={15} /></span><span>Movement</span><b>6,240 <small>/ 8,000</small></b><div className="progress-track"><div className="progress-fill gold" style={{ width: '78%' }} /></div></div></div><div className="hc-foot"><span><span className="status-dot" />A few small wins add up.</span><span>01 / 03</span></div></div><div className="floating-note"><span className="spark-circle"><Sparkles size={16} /></span><span><b>A pattern worth noticing</b><small>Your sleep and mood are moving together.</small></span></div></div>
     </section>
-    <section id="approach" className="approach-section"><div className="wrap approach-grid"><div><span className="eyebrow">A DIFFERENT KIND OF HEALTH TRACKER</span><h2 className="serif">Curiosity over<br /><i>correction.</i></h2></div><div className="approach-copy"><p>Good health isn’t a score you pass or fail. It’s the texture of your days: a walk that clears your head, a night that restores you, a glass of water when you remember.</p><p>Wellnest brings those moments together, so you can understand your own rhythms—and choose what feels right next.</p><Link href="/register" className="under-link">Get to know your patterns <ArrowRight size={15} /></Link></div></div></section>
+    <section id="approach" className="approach-section"><div className="wrap approach-grid"><div><span className="eyebrow">A DIFFERENT KIND OF HEALTH TRACKER</span><h2 className="serif">Curiosity over<br /><i>correction.</i></h2></div><div className="approach-copy"><p>Good health isn’t a score you pass or fail. It’s the texture of your days: a walk that clears your head, a night that restores you, a glass of water when you remember.</p><p>HealthTrack brings those moments together, so you can understand your own rhythms—and choose what feels right next.</p><Link href="/register" className="under-link">Get to know your patterns <ArrowRight size={15} /></Link></div></div></section>
     <section id="how" className="feature-section wrap"><div className="feature-heading"><div><span className="eyebrow">YOUR HEALTH, IN CONTEXT</span><h2 className="serif">A daily practice<br />that <i>fits you.</i></h2></div><p>No complicated setup. Start with a few things you care about, then let understanding grow over time.</p></div><div className="feature-list"><article><span className="feature-num">01</span><div className="feature-icon peach"><Droplets /></div><div><h3>Notice the everyday</h3><p>Keep a light touch on hydration, rest, movement, meals, and mood. Log what matters to you.</p></div><ArrowRight className="feature-arrow" size={18} /></article><article><span className="feature-num">02</span><div className="feature-icon sage"><TrendingUp /></div><div><h3>See the shape of things</h3><p>Gentle trends make it easier to spot the habits that help you feel more like yourself.</p></div><ArrowRight className="feature-arrow" size={18} /></article><article><span className="feature-num">03</span><div className="feature-icon butter"><Sparkles /></div><div><h3>Find a kind next step</h3><p>Your wellness guide reflects on your own logs with practical, low-pressure ideas.</p></div><ArrowRight className="feature-arrow" size={18} /></article></div></section>
     <section className="quote-section"><div className="wrap quote-inner"><span className="quote-mark">“</span><blockquote className="serif">The goal isn’t to become someone else.<br />It’s to understand what helps <i>you.</i></blockquote><div className="quote-rule" /><span className="eyebrow">WELLNESS THAT MEETS YOU WHERE YOU ARE</span></div></section>
     <section className="closing wrap"><div className="closing-leaf"><Sprout size={23} /></div><div><span className="eyebrow">A SMALL BEGINNING IS STILL A BEGINNING</span><h2 className="serif">Start wherever you are.</h2><p>Two minutes to set up. A little more clarity, every day after.</p></div><Link href="/register" className="btn btn-primary">Create your space <ArrowRight size={16} /></Link></section>
-    <footer className="landing-footer wrap"><Brand /><p>Private, personal wellness tracking.</p><Disclaimer compact /><span>© Wellnest AI</span></footer>
+    <footer className="landing-footer wrap"><Brand /><p>Private, personal wellness tracking.</p><Disclaimer compact /><span>© HealthTrack AI</span></footer>
   </div>;
 }
 
@@ -150,6 +190,7 @@ function Onboarding({ profile }: { profile: UserProfile }) {
   const [, go] = useLocation();
   const [step, setStep] = useState(0);
   const [error, setError] = useState('');
+  const manualGoals = useRef(new Set<keyof ProfileInput>());
   const [form, setForm] = useState<ProfileInput>({
     name: profile.name || '', age: profile.age ?? null, gender: profile.gender || 'prefer_not_to_say',
     heightCm: profile.heightCm, weightKg: profile.weightKg, activityLevel: profile.activityLevel || 'moderate',
@@ -158,6 +199,19 @@ function Onboarding({ profile }: { profile: UserProfile }) {
     sleepGoalHours: profile.goals?.sleepHours || 8,
   });
   const change = (key: keyof ProfileInput, value: string) => setForm(f => ({ ...f, [key]: ['age','heightCm','weightKg','waterGoalMl','stepsGoal','exerciseGoalMinutes','sleepGoalHours'].includes(key) ? (value === '' ? null : Number(value)) : value } as ProfileInput));
+  useEffect(() => {
+    const suggested = suggestedGoals(form.weightKg, form.activityLevel, form.age);
+    setForm(current => ({
+      ...current,
+      waterGoalMl: manualGoals.current.has('waterGoalMl') ? current.waterGoalMl : suggested.waterGoalMl,
+      stepsGoal: manualGoals.current.has('stepsGoal') ? current.stepsGoal : suggested.stepsGoal,
+      exerciseGoalMinutes: manualGoals.current.has('exerciseGoalMinutes') ? current.exerciseGoalMinutes : suggested.exerciseGoalMinutes,
+    }));
+  }, [form.weightKg, form.activityLevel, form.age]);
+  const changeGoal = (key: 'waterGoalMl' | 'stepsGoal' | 'exerciseGoalMinutes' | 'sleepGoalHours', value: string) => {
+    manualGoals.current.add(key);
+    change(key, value);
+  };
   const save = () => { setError(''); update.mutate({ data: form }, { onSuccess: p => { qc.setQueryData(getGetProfileQueryKey(), p); qc.setQueryData(getGetMeQueryKey(), p); go('/dashboard'); }, onError: e => setError(errorText(e)) }); };
   return <div className="onboard-page grain"><header className="public-header"><Brand /><span className="quiet-label">YOUR SPACE, YOUR PACE</span></header><div className="onboard-wrap"><div className="onboard-progress"><span className={step === 0 ? 'current' : 'done'}>01</span><i /><span className={step === 1 ? 'current' : ''}>02</span><i /><span className={step === 2 ? 'current' : ''}>03</span></div>
     <div className="onboard-body page-in"><div className="onboard-side"><span className="eyebrow">A GOOD START</span><h1 className="serif">{['First, a little about you.','What feels good to focus on?','A rhythm that’s yours.'][step]}</h1><p>{['Your health is personal. Your space should be, too.','Set a few gentle daily intentions. You can always change these later.','Choose a pace that fits the life you have right now.'][step]}</p><div className="onboard-illustration"><div className="o-circle"><Heart size={31} /></div><span className="o-orbit o1" /><span className="o-orbit o2" /><span className="o-star" /></div></div>
@@ -166,7 +220,7 @@ function Onboarding({ profile }: { profile: UserProfile }) {
         <div className="two-fields"><label><span className="label">Age</span><input className="field" type="number" min="10" max="120" placeholder="Optional" value={form.age ?? ''} onChange={e => change('age', e.target.value)} /></label><label><span className="label">Gender</span><select className="field" value={form.gender} onChange={e => change('gender', e.target.value)}><option value="prefer_not_to_say">Prefer not to say</option><option value="woman">Woman</option><option value="man">Man</option><option value="non_binary">Non-binary</option><option value="self_describe">Self describe</option></select></label></div>
         <div className="two-fields"><label><span className="label">Height (cm)</span><input className="field" type="number" min="1" placeholder="Optional" value={form.heightCm ?? ''} onChange={e => change('heightCm', e.target.value)} /></label><label><span className="label">Weight (kg)</span><input className="field" type="number" min="1" step=".1" placeholder="Optional" value={form.weightKg ?? ''} onChange={e => change('weightKg', e.target.value)} /></label></div>
         <label><span className="label">Usual activity</span><select className="field" value={form.activityLevel} onChange={e => change('activityLevel', e.target.value)}><option value="sedentary">Mostly sitting</option><option value="light">A little movement</option><option value="moderate">A balanced mix</option><option value="active">Quite active</option><option value="very_active">Very active most days</option></select></label>
-      </div> : step === 1 ? <div className="form-stack"><TargetInput label="Water" unit="ml / day" value={form.waterGoalMl} onChange={v => change('waterGoalMl', v)} /><TargetInput label="Steps" unit="steps / day" value={form.stepsGoal} onChange={v => change('stepsGoal', v)} /><TargetInput label="Movement" unit="minutes / day" value={form.exerciseGoalMinutes} onChange={v => change('exerciseGoalMinutes', v)} /><TargetInput label="Sleep" unit="hours / night" value={form.sleepGoalHours} onChange={v => change('sleepGoalHours', v)} /></div> : <div className="welcome-step"><span className="welcome-icon"><Sprout size={32} /></span><h2 className="serif">This is a beginning,<br />not a test.</h2><p>Your goals can shift as your life does. We’ll help you notice what works, without keeping score of your worth.</p><div className="welcome-facts"><span><CheckCircle2 size={16} />You’re in control</span><span><ShieldCheck size={16} />Your data stays personal</span></div></div>}
+      </div> : step === 1 ? <div className="form-stack"><TargetInput label="Water" unit="ml / day" value={form.waterGoalMl} onChange={v => changeGoal('waterGoalMl', v)} /><TargetInput label="Steps" unit="steps / day" value={form.stepsGoal} onChange={v => changeGoal('stepsGoal', v)} /><TargetInput label="Movement" unit="minutes / day" value={form.exerciseGoalMinutes} onChange={v => changeGoal('exerciseGoalMinutes', v)} /><TargetInput label="Sleep" unit="hours / night" value={form.sleepGoalHours} onChange={v => changeGoal('sleepGoalHours', v)} /><p className="metric-hint">Gentle starting points based on your details. Adjust any of them to what feels right; these are not medical prescriptions.</p></div> : <div className="welcome-step"><span className="welcome-icon"><Sprout size={32} /></span><h2 className="serif">This is a beginning,<br />not a test.</h2><p>Your goals can shift as your life does. We’ll help you notice what works, without keeping score of your worth.</p><div className="welcome-facts"><span><CheckCircle2 size={16} />You’re in control</span><span><ShieldCheck size={16} />Your data stays personal</span></div></div>}
         {error && <p className="form-error">{error}</p>}<div className="onboard-actions">{step > 0 && <button className="btn btn-soft" onClick={() => setStep(s => s - 1)}><ChevronLeft size={16} />Back</button>}{step < 2 ? <button className="btn btn-primary" onClick={() => setStep(s => s + 1)}>Continue <ArrowRight size={16} /></button> : <button className="btn btn-primary" onClick={save} disabled={update.isPending}>{update.isPending ? 'Saving…' : 'Step into your space'} <ArrowRight size={16} /></button>}</div>
       </div></div><footer className="onboard-footer"><Disclaimer compact /></footer></div></div>;
 }
@@ -176,6 +230,7 @@ function TargetInput({ label, unit, value, onChange }: { label: string; unit: st
 }
 
 function MetricTile({ label, value, unit, goal, icon: Icon, color, onAdd, increment }: { label: string; value: number; unit: string; goal: number; icon: typeof Droplets; color: string; onAdd?: () => void; increment?: string }) {
+  const pct = Math.min(100, goal > 0 ? (value / goal) * 100 : 0);
   return <div className="metric-card card"><div className="metric-top"><span className={`metric-icon ${color}`}><Icon size={18} /></span>{onAdd && <button onClick={onAdd} className="add-round" aria-label={`Add ${label}`} title={`Add ${label}`}><Plus size={16} /></button>}</div><div className="metric-label">{label}</div><div className="metric-value">{fmt(value)}<small> {unit}</small></div><div className="metric-meta"><span>{fmt(goal)} {unit} goal</span><b>{Math.round(pct)}%</b></div><div className="progress-track"><div className="progress-fill" style={{ width: `${pct}%` }} /></div>{increment && <span className="metric-hint">+{increment} with one tap</span>}</div>;
 }
 
@@ -326,14 +381,13 @@ function SettingsPage({profile}:{profile:UserProfile}) {
   const update=useUpdateProfile(); const exp=useExportUserData({query:{enabled:false,queryKey:getExportUserDataQueryKey()}}); const del=useDeleteAccount(); const qc=useQueryClient(); const [,go]=useLocation();
   const [toast,setToast]=useState(''); const [theme,setTheme]=useState(profile.themePreference||'light');
   useEffect(()=>{document.documentElement.classList.toggle('dark',theme==='dark');},[theme]);
-  useEffect(()=>{if(!exp.data)return;const blob=new Blob([JSON.stringify(exp.data,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='wellnest-health-data.json';a.click();URL.revokeObjectURL(a.href);setToast('Your data export is ready');},[exp.data]);
   const setThemePreference=(value:'light'|'dark')=>{setTheme(value);const data:ProfileInput={name:profile.name,age:profile.age,gender:profile.gender,heightCm:profile.heightCm,weightKg:profile.weightKg,activityLevel:profile.activityLevel,themePreference:value,waterGoalMl:profile.goals?.waterMl??2200,stepsGoal:profile.goals?.steps??8000,exerciseGoalMinutes:profile.goals?.exerciseMinutes??30,sleepGoalHours:profile.goals?.sleepHours??8};update.mutate({data},{onSuccess:p=>{qc.setQueryData(getGetProfileQueryKey(),p);qc.setQueryData(getGetMeQueryKey(),p);setToast('Display preference saved')},onError:e=>setToast(errorText(e))});};
-  const exportData=()=>{setToast('Preparing your personal data…');exp.refetch();};
+  const exportData=(format:'json'|'csv')=>{setToast(`Preparing your ${format.toUpperCase()} export…`);void exp.refetch().then(({data})=>{if(!data){setToast('Your data export could not be prepared. Please try again.');return;}const body=format==='json'?JSON.stringify(data,null,2):exportAsCsv(data);const blob=new Blob([body],{type:format==='json'?'application/json':'text/csv;charset=utf-8'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=`healthtrack-data-${todayISO()}.${format}`;a.click();window.setTimeout(()=>URL.revokeObjectURL(url),1000);setToast(`${format.toUpperCase()} export is ready`);}).catch(()=>setToast('Your data export could not be prepared. Please try again.'));};
   const deleteAccount=()=>{if(!window.confirm('Permanently delete your account and all personal health data? This cannot be undone.'))return;del.mutate(undefined,{onSuccess:()=>{qc.clear();go('/register')},onError:e=>setToast(errorText(e))});};
-  return <><PageTitle eyebrow="YOUR SPACE, YOUR CHOICES" title="Settings." sub="A few ways to make Wellnest feel right for you."/>
+  return <><PageTitle eyebrow="YOUR SPACE, YOUR CHOICES" title="Settings." sub="A few ways to make HealthTrack feel right for you."/>
     <div className="settings-stack"><section className="setting-row card"><div className="setting-icon"><Sun size={19}/></div><div className="setting-copy"><b>Appearance</b><p>Choose the light that feels best.</p></div><div className="theme-picker"><button className={theme==='light'?'chosen':''} onClick={()=>setThemePreference('light')}><Sun size={16}/>Light</button><button className={theme==='dark'?'chosen':''} onClick={()=>setThemePreference('dark')}><Moon size={16}/>Dark</button></div></section>
-      <section className="setting-row card"><div className="setting-icon"><Download size={19}/></div><div className="setting-copy"><b>Your data, yours to keep</b><p>Download a copy of your profile, daily notes, intentions, and reminders.</p></div><button className="btn btn-soft" onClick={exportData} disabled={exp.isFetching}>{exp.isFetching?'Preparing…':'Export data'} <Download size={15}/></button></section>
-      <section className="setting-row card danger-setting"><div className="setting-icon"><Trash2 size={19}/></div><div className="setting-copy"><b>Close your Wellnest space</b><p>Permanently remove your account and all saved health information.</p></div><button className="btn btn-danger" onClick={deleteAccount} disabled={del.isPending}>{del.isPending?'Removing…':'Delete account'}</button></section>
+      <section className="setting-row card"><div className="setting-icon"><Download size={19}/></div><div className="setting-copy"><b>Your data, yours to keep</b><p>Download a copy of your profile, daily notes, intentions, and reminders.</p></div><div className="export-actions"><button className="btn btn-soft" onClick={()=>exportData('json')} disabled={exp.isFetching}>{exp.isFetching?'Preparing…':'JSON'} <Download size={15}/></button><button className="btn btn-soft" onClick={()=>exportData('csv')} disabled={exp.isFetching}>{exp.isFetching?'Preparing…':'CSV'} <Download size={15}/></button></div></section>
+      <section className="setting-row card danger-setting"><div className="setting-icon"><Trash2 size={19}/></div><div className="setting-copy"><b>Close your HealthTrack space</b><p>Permanently remove your account and all saved health information.</p></div><button className="btn btn-danger" onClick={deleteAccount} disabled={del.isPending}>{del.isPending?'Removing…':'Delete account'}</button></section>
     </div>
     <div className="settings-note"><ShieldCheck size={17}/><span>Your health information is personal. We’ll never use it to define you.</span><Link href="/profile">Review your details <ArrowRight size={14}/></Link></div>
     {toast&&<Notice text={toast} clear={()=>setToast('')}/>}

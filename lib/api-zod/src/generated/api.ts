@@ -207,20 +207,25 @@ export const UpdateProfileResponse = zod.object({
 /**
  * @summary List daily health records
  */
+export const getRecordsQueryStartDateRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+export const getRecordsQueryEndDateRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
 export const getRecordsQueryLimitDefault = 30;
 export const getRecordsQueryLimitMax = 100;
 
 
 
 export const GetRecordsQueryParams = zod.object({
-  "startDate": zod.date().optional(),
-  "endDate": zod.date().optional(),
+  "startDate": zod.coerce.string().regex(getRecordsQueryStartDateRegExp).optional(),
+  "endDate": zod.coerce.string().regex(getRecordsQueryEndDateRegExp).optional(),
   "limit": zod.coerce.number().int().min(1).max(getRecordsQueryLimitMax).default(getRecordsQueryLimitDefault)
 })
 
+export const getRecordsResponseDateRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+
+
 export const GetRecordsResponseItem = zod.object({
   "id": zod.string().uuid(),
-  "date": zod.coerce.date(),
+  "date": zod.string().regex(getRecordsResponseDateRegExp),
   "waterMl": zod.number().int(),
   "steps": zod.number().int(),
   "exerciseMinutes": zod.number().int(),
@@ -243,6 +248,7 @@ export const GetRecordsResponse = zod.array(GetRecordsResponseItem)
 /**
  * @summary Create or update a daily record
  */
+export const saveRecordBodyDateRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
 export const saveRecordBodyWaterMlMin = 0;
 
 export const saveRecordBodyStepsMin = 0;
@@ -272,7 +278,7 @@ export const saveRecordBodyNotesMax = 500;
 
 
 export const SaveRecordBody = zod.object({
-  "date": zod.coerce.date(),
+  "date": zod.string().regex(saveRecordBodyDateRegExp),
   "waterMl": zod.number().int().min(saveRecordBodyWaterMlMin),
   "steps": zod.number().int().min(saveRecordBodyStepsMin),
   "exerciseMinutes": zod.number().int().min(saveRecordBodyExerciseMinutesMin),
@@ -289,9 +295,12 @@ export const SaveRecordBody = zod.object({
   "notes": zod.string().max(saveRecordBodyNotesMax).nullish()
 })
 
+export const saveRecordResponseDateRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+
+
 export const SaveRecordResponse = zod.object({
   "id": zod.string().uuid(),
-  "date": zod.coerce.date(),
+  "date": zod.string().regex(saveRecordResponseDateRegExp),
   "waterMl": zod.number().int(),
   "steps": zod.number().int(),
   "exerciseMinutes": zod.number().int(),
@@ -313,9 +322,12 @@ export const SaveRecordResponse = zod.object({
 /**
  * @summary Get or initialize today's record
  */
+export const getTodayRecordResponseDateRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+
+
 export const GetTodayRecordResponse = zod.object({
   "id": zod.string().uuid(),
-  "date": zod.coerce.date(),
+  "date": zod.string().regex(getTodayRecordResponseDateRegExp),
   "waterMl": zod.number().int(),
   "steps": zod.number().int(),
   "exerciseMinutes": zod.number().int(),
@@ -346,9 +358,12 @@ export const IncrementRecordBody = zod.object({
   "delta": zod.number().int().min(1).max(incrementRecordBodyDeltaMax)
 })
 
+export const incrementRecordResponseDateRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+
+
 export const IncrementRecordResponse = zod.object({
   "id": zod.string().uuid(),
-  "date": zod.coerce.date(),
+  "date": zod.string().regex(incrementRecordResponseDateRegExp),
   "waterMl": zod.number().int(),
   "steps": zod.number().int(),
   "exerciseMinutes": zod.number().int(),
@@ -382,13 +397,17 @@ export const DeleteRecordResponse = zod.object({
 /**
  * @summary List goals
  */
+export const getGoalsResponseStartDateRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+export const getGoalsResponseEndDateRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+
+
 export const GetGoalsResponseItem = zod.object({
   "id": zod.string().uuid(),
   "goalType": zod.enum(['water_ml', 'steps', 'exercise_min', 'sleep_hrs', 'weight_kg', 'calories_kcal']),
   "targetValue": zod.number(),
   "currentValue": zod.number(),
-  "startDate": zod.coerce.date(),
-  "endDate": zod.coerce.date().nullable(),
+  "startDate": zod.string().regex(getGoalsResponseStartDateRegExp),
+  "endDate": zod.string().regex(getGoalsResponseEndDateRegExp).nullable(),
   "status": zod.enum(['active', 'completed', 'abandoned'])
 })
 export const GetGoalsResponse = zod.array(GetGoalsResponseItem)
@@ -399,22 +418,28 @@ export const GetGoalsResponse = zod.array(GetGoalsResponseItem)
  */
 export const createGoalBodyTargetValueExclusiveMin = 0;
 
+export const createGoalBodyStartDateRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+export const createGoalBodyEndDateRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
 
 
 export const CreateGoalBody = zod.object({
   "goalType": zod.enum(['water_ml', 'steps', 'exercise_min', 'sleep_hrs', 'weight_kg', 'calories_kcal']),
   "targetValue": zod.number().gt(createGoalBodyTargetValueExclusiveMin),
-  "startDate": zod.coerce.date(),
-  "endDate": zod.coerce.date().nullish()
+  "startDate": zod.string().regex(createGoalBodyStartDateRegExp),
+  "endDate": zod.string().regex(createGoalBodyEndDateRegExp).nullish()
 })
+
+export const createGoalResponseStartDateRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+export const createGoalResponseEndDateRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+
 
 export const CreateGoalResponse = zod.object({
   "id": zod.string().uuid(),
   "goalType": zod.enum(['water_ml', 'steps', 'exercise_min', 'sleep_hrs', 'weight_kg', 'calories_kcal']),
   "targetValue": zod.number(),
   "currentValue": zod.number(),
-  "startDate": zod.coerce.date(),
-  "endDate": zod.coerce.date().nullable(),
+  "startDate": zod.string().regex(createGoalResponseStartDateRegExp),
+  "endDate": zod.string().regex(createGoalResponseEndDateRegExp).nullable(),
   "status": zod.enum(['active', 'completed', 'abandoned'])
 })
 
@@ -430,22 +455,27 @@ export const updateGoalBodyTargetValueExclusiveMin = 0;
 
 export const updateGoalBodyCurrentValueMin = 0;
 
+export const updateGoalBodyEndDateRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
 
 
 export const UpdateGoalBody = zod.object({
   "targetValue": zod.number().gt(updateGoalBodyTargetValueExclusiveMin).optional(),
   "currentValue": zod.number().min(updateGoalBodyCurrentValueMin).optional(),
-  "endDate": zod.coerce.date().nullish(),
+  "endDate": zod.string().regex(updateGoalBodyEndDateRegExp).nullish(),
   "status": zod.enum(['active', 'completed', 'abandoned']).optional()
 })
+
+export const updateGoalResponseStartDateRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+export const updateGoalResponseEndDateRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+
 
 export const UpdateGoalResponse = zod.object({
   "id": zod.string().uuid(),
   "goalType": zod.enum(['water_ml', 'steps', 'exercise_min', 'sleep_hrs', 'weight_kg', 'calories_kcal']),
   "targetValue": zod.number(),
   "currentValue": zod.number(),
-  "startDate": zod.coerce.date(),
-  "endDate": zod.coerce.date().nullable(),
+  "startDate": zod.string().regex(updateGoalResponseStartDateRegExp),
+  "endDate": zod.string().regex(updateGoalResponseEndDateRegExp).nullable(),
   "status": zod.enum(['active', 'completed', 'abandoned'])
 })
 
@@ -555,11 +585,14 @@ export const GetAnalyticsSummaryQueryParams = zod.object({
   "range": zod.enum(['7d', '30d', '90d']).default(getAnalyticsSummaryQueryRangeDefault)
 })
 
+export const getAnalyticsSummaryResponseRecordsItemDateRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+
+
 export const GetAnalyticsSummaryResponse = zod.object({
   "range": zod.enum(['7d', '30d', '90d']),
   "records": zod.array(zod.object({
   "id": zod.string().uuid(),
-  "date": zod.coerce.date(),
+  "date": zod.string().regex(getAnalyticsSummaryResponseRecordsItemDateRegExp),
   "waterMl": zod.number().int(),
   "steps": zod.number().int(),
   "exerciseMinutes": zod.number().int(),
@@ -632,6 +665,11 @@ export const GetWeeklyDigestResponse = zod.object({
 /**
  * @summary Export all user data as JSON
  */
+export const exportUserDataResponseRecordsItemDateRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+export const exportUserDataResponseGoalsItemStartDateRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+export const exportUserDataResponseGoalsItemEndDateRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+
+
 export const ExportUserDataResponse = zod.object({
   "profile": zod.object({
   "id": zod.string().uuid(),
@@ -653,7 +691,7 @@ export const ExportUserDataResponse = zod.object({
 }),
   "records": zod.array(zod.object({
   "id": zod.string().uuid(),
-  "date": zod.coerce.date(),
+  "date": zod.string().regex(exportUserDataResponseRecordsItemDateRegExp),
   "waterMl": zod.number().int(),
   "steps": zod.number().int(),
   "exerciseMinutes": zod.number().int(),
@@ -675,8 +713,8 @@ export const ExportUserDataResponse = zod.object({
   "goalType": zod.enum(['water_ml', 'steps', 'exercise_min', 'sleep_hrs', 'weight_kg', 'calories_kcal']),
   "targetValue": zod.number(),
   "currentValue": zod.number(),
-  "startDate": zod.coerce.date(),
-  "endDate": zod.coerce.date().nullable(),
+  "startDate": zod.string().regex(exportUserDataResponseGoalsItemStartDateRegExp),
+  "endDate": zod.string().regex(exportUserDataResponseGoalsItemEndDateRegExp).nullable(),
   "status": zod.enum(['active', 'completed', 'abandoned'])
 })),
   "reminders": zod.array(zod.object({

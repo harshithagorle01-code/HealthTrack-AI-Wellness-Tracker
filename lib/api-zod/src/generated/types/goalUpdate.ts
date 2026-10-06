@@ -12,7 +12,10 @@ export interface GoalUpdate {
   targetValue?: number;
   /** @minimum 0 */
   currentValue?: number;
-  /** @nullable */
-  endDate?: Date | null;
+  /**
+     * @nullable
+     * @pattern ^\d{4}-\d{2}-\d{2}$
+     */
+  endDate?: string | null;
   status?: GoalUpdateStatus;
 }

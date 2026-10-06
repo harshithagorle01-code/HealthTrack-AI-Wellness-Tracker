@@ -9,6 +9,7 @@ import './healthtrack-more.css';
 import './healthtrack-data.css';
 import './healthtrack-responsive.css';
 import './healthtrack-nav.css';
+import './healthtrack-settings.css';
 
 createRoot(document.getElementById('root')!, {
   // Keeps caught errors off reportError(), which would raise the dev overlay.

@@ -10,7 +10,8 @@ import type { HealthRecordStressLevel } from './healthRecordStressLevel';
 
 export interface HealthRecord {
   id: string;
-  date: Date;
+  /** @pattern ^\d{4}-\d{2}-\d{2}$ */
+  date: string;
   waterMl: number;
   steps: number;
   exerciseMinutes: number;

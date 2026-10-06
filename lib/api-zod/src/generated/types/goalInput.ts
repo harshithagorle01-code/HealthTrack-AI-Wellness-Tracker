@@ -11,7 +11,11 @@ export interface GoalInput {
   goalType: GoalInputGoalType;
   /** @exclusiveMinimum 0 */
   targetValue: number;
-  startDate: Date;
-  /** @nullable */
-  endDate?: Date | null;
+  /** @pattern ^\d{4}-\d{2}-\d{2}$ */
+  startDate: string;
+  /**
+     * @nullable
+     * @pattern ^\d{4}-\d{2}-\d{2}$
+     */
+  endDate?: string | null;
 }

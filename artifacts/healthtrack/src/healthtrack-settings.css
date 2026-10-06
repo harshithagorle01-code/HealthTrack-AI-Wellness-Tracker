@@ -1,0 +1,12 @@
+.export-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  flex: none;
+}
+
+@media (max-width: 767px) {
+  .export-actions {
+    margin-left: 53px;
+  }
+}

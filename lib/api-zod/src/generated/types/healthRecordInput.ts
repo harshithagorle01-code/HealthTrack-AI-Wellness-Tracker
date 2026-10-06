@@ -9,7 +9,8 @@ import type { HealthRecordInputMood } from './healthRecordInputMood';
 import type { HealthRecordInputStressLevel } from './healthRecordInputStressLevel';
 
 export interface HealthRecordInput {
-  date: Date;
+  /** @pattern ^\d{4}-\d{2}-\d{2}$ */
+  date: string;
   /** @minimum 0 */
   waterMl: number;
   /** @minimum 0 */

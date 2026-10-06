@@ -174,6 +174,7 @@ export const HealthRecordStressLevel = {
 
 export interface HealthRecord {
   id: string;
+  /** @pattern ^\d{4}-\d{2}-\d{2}$ */
   date: string;
   waterMl: number;
   steps: number;
@@ -229,6 +230,7 @@ export const HealthRecordInputStressLevel = {
 } as const;
 
 export interface HealthRecordInput {
+  /** @pattern ^\d{4}-\d{2}-\d{2}$ */
   date: string;
   /** @minimum 0 */
   waterMl: number;
@@ -330,8 +332,12 @@ export interface Goal {
   goalType: GoalGoalType;
   targetValue: number;
   currentValue: number;
+  /** @pattern ^\d{4}-\d{2}-\d{2}$ */
   startDate: string;
-  /** @nullable */
+  /**
+     * @nullable
+     * @pattern ^\d{4}-\d{2}-\d{2}$
+     */
   endDate: string | null;
   status: GoalStatus;
 }
@@ -352,8 +358,12 @@ export interface GoalInput {
   goalType: GoalInputGoalType;
   /** @exclusiveMinimum 0 */
   targetValue: number;
+  /** @pattern ^\d{4}-\d{2}-\d{2}$ */
   startDate: string;
-  /** @nullable */
+  /**
+     * @nullable
+     * @pattern ^\d{4}-\d{2}-\d{2}$
+     */
   endDate?: string | null;
 }
 
@@ -371,7 +381,10 @@ export interface GoalUpdate {
   targetValue?: number;
   /** @minimum 0 */
   currentValue?: number;
-  /** @nullable */
+  /**
+     * @nullable
+     * @pattern ^\d{4}-\d{2}-\d{2}$
+     */
   endDate?: string | null;
   status?: GoalUpdateStatus;
 }
@@ -542,7 +555,13 @@ export interface DataExport {
 export type ErrorResponseResponse = Error;
 
 export type GetRecordsParams = {
+/**
+ * @pattern ^\d{4}-\d{2}-\d{2}$
+ */
 startDate?: string;
+/**
+ * @pattern ^\d{4}-\d{2}-\d{2}$
+ */
 endDate?: string;
 /**
  * @minimum 1
