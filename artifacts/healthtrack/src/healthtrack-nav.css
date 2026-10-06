@@ -1,0 +1,2 @@
+.mobile-nav{display:none}.protected-loader>div{width:min(490px,100%)}.protected-loader .disclaimer{justify-content:center}
+@media(max-width:767px){.mobile-nav{display:flex}.topbar-mobile{display:block}}

@@ -10,6 +10,20 @@ servers:
 tags:
   - name: health
     description: Health operations
+  - name: auth
+    description: Account registration and sessions
+  - name: profile
+    description: User profile and wellness targets
+  - name: records
+    description: Daily wellness logs
+  - name: goals
+    description: Personal wellness goals
+  - name: reminders
+    description: Scheduled reminders
+  - name: analytics
+    description: Personal trend summaries
+  - name: ai
+    description: Non-diagnostic wellness coaching
 paths:
   /healthz:
     get:
@@ -24,7 +38,439 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /v1/auth/register:
+    post:
+      operationId: register
+      tags: [auth]
+      summary: Create an account
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterInput"
+      responses:
+        "201":
+          description: Account created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "400":
+          $ref: "#/components/responses/ErrorResponse"
+        "409":
+          $ref: "#/components/responses/ErrorResponse"
+  /v1/auth/login:
+    post:
+      operationId: login
+      tags: [auth]
+      summary: Sign in
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginInput"
+      responses:
+        "200":
+          description: Signed in
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "401":
+          $ref: "#/components/responses/ErrorResponse"
+  /v1/auth/logout:
+    post:
+      operationId: logout
+      tags: [auth]
+      summary: Sign out
+      responses:
+        "200":
+          description: Signed out
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Message"
+  /v1/auth/me:
+    get:
+      operationId: getMe
+      tags: [auth]
+      summary: Get the signed-in user's profile
+      responses:
+        "200":
+          description: User profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+        "401":
+          $ref: "#/components/responses/ErrorResponse"
+  /v1/profile:
+    get:
+      operationId: getProfile
+      tags: [profile]
+      summary: Get profile and daily targets
+      responses:
+        "200":
+          description: Profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+        "401":
+          $ref: "#/components/responses/ErrorResponse"
+    put:
+      operationId: updateProfile
+      tags: [profile]
+      summary: Save onboarding or profile settings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProfileInput"
+      responses:
+        "200":
+          description: Updated profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+        "400":
+          $ref: "#/components/responses/ErrorResponse"
+  /v1/records:
+    get:
+      operationId: getRecords
+      tags: [records]
+      summary: List daily health records
+      parameters:
+        - in: query
+          name: startDate
+          schema: { type: string, format: date }
+        - in: query
+          name: endDate
+          schema: { type: string, format: date }
+        - in: query
+          name: limit
+          schema: { type: integer, minimum: 1, maximum: 100, default: 30 }
+      responses:
+        "200":
+          description: Daily records
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/HealthRecord"
+        "401":
+          $ref: "#/components/responses/ErrorResponse"
+    post:
+      operationId: saveRecord
+      tags: [records]
+      summary: Create or update a daily record
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/HealthRecordInput"
+      responses:
+        "200":
+          description: Saved daily record
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthRecord"
+        "400":
+          $ref: "#/components/responses/ErrorResponse"
+  /v1/records/today:
+    get:
+      operationId: getTodayRecord
+      tags: [records]
+      summary: Get or initialize today's record
+      responses:
+        "200":
+          description: Today's record
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthRecord"
+        "401":
+          $ref: "#/components/responses/ErrorResponse"
+  /v1/records/increment:
+    patch:
+      operationId: incrementRecord
+      tags: [records]
+      summary: Increment a daily metric
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/IncrementInput"
+      responses:
+        "200":
+          description: Updated daily record
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthRecord"
+        "400":
+          $ref: "#/components/responses/ErrorResponse"
+  /v1/records/{id}:
+    delete:
+      operationId: deleteRecord
+      tags: [records]
+      summary: Delete a daily record
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Message"
+        "404":
+          $ref: "#/components/responses/ErrorResponse"
+  /v1/goals:
+    get:
+      operationId: getGoals
+      tags: [goals]
+      summary: List goals
+      responses:
+        "200":
+          description: Goals
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Goal"
+    post:
+      operationId: createGoal
+      tags: [goals]
+      summary: Create a goal
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GoalInput"
+      responses:
+        "201":
+          description: Created goal
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Goal"
+        "400":
+          $ref: "#/components/responses/ErrorResponse"
+  /v1/goals/{id}:
+    put:
+      operationId: updateGoal
+      tags: [goals]
+      summary: Update a goal
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GoalUpdate"
+      responses:
+        "200":
+          description: Updated goal
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Goal"
+        "404":
+          $ref: "#/components/responses/ErrorResponse"
+    delete:
+      operationId: deleteGoal
+      tags: [goals]
+      summary: Delete a goal
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Message"
+        "404":
+          $ref: "#/components/responses/ErrorResponse"
+  /v1/reminders:
+    get:
+      operationId: getReminders
+      tags: [reminders]
+      summary: List reminders
+      responses:
+        "200":
+          description: Reminders
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Reminder"
+    post:
+      operationId: createReminder
+      tags: [reminders]
+      summary: Create a reminder
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReminderInput"
+      responses:
+        "201":
+          description: Created reminder
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Reminder"
+  /v1/reminders/{id}:
+    put:
+      operationId: updateReminder
+      tags: [reminders]
+      summary: Update a reminder
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReminderUpdate"
+      responses:
+        "200":
+          description: Updated reminder
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Reminder"
+        "404":
+          $ref: "#/components/responses/ErrorResponse"
+    delete:
+      operationId: deleteReminder
+      tags: [reminders]
+      summary: Delete a reminder
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Message"
+        "404":
+          $ref: "#/components/responses/ErrorResponse"
+  /v1/analytics/summary:
+    get:
+      operationId: getAnalyticsSummary
+      tags: [analytics]
+      summary: Get health trends for a time range
+      parameters:
+        - in: query
+          name: range
+          schema:
+            type: string
+            enum: [7d, 30d, 90d]
+            default: 7d
+      responses:
+        "200":
+          description: Trend summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnalyticsSummary"
+  /v1/ai/daily-insight:
+    get:
+      operationId: getDailyInsight
+      tags: [ai]
+      summary: Get a safe daily wellness insight
+      responses:
+        "200":
+          description: Daily insight
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WellnessInsight"
+  /v1/ai/chat:
+    post:
+      operationId: sendAiChat
+      tags: [ai]
+      summary: Ask a wellness question grounded in personal logs
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChatInput"
+      responses:
+        "200":
+          description: Coach response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChatResponse"
+  /v1/ai/weekly-digest:
+    get:
+      operationId: getWeeklyDigest
+      tags: [ai]
+      summary: Get a weekly wellness digest
+      responses:
+        "200":
+          description: Weekly digest
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WeeklyDigest"
+  /v1/export:
+    get:
+      operationId: exportUserData
+      tags: [profile]
+      summary: Export all user data as JSON
+      responses:
+        "200":
+          description: Data export
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DataExport"
+  /v1/account:
+    delete:
+      operationId: deleteAccount
+      tags: [profile]
+      summary: Permanently delete the account and its health data
+      responses:
+        "200":
+          description: Account erased
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Message"
 components:
+  parameters:
+    Id:
+      in: path
+      name: id
+      required: true
+      schema: { type: string, format: uuid }
+  responses:
+    ErrorResponse:
+      description: Request failed
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
   schemas:
     HealthStatus:
       type: object
@@ -33,4 +479,237 @@ components:
           type: string
       required:
         - status
+    Error:
+      type: object
+      properties:
+        error: { type: string }
+      required: [error]
+    Message:
+      type: object
+      properties:
+        message: { type: string }
+      required: [message]
+    UserProfile:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        email: { type: string, format: email }
+        age: { type: ["integer", "null"] }
+        gender: { type: string }
+        heightCm: { type: ["number", "null"] }
+        weightKg: { type: ["number", "null"] }
+        activityLevel: { type: string, enum: [sedentary, light, moderate, active, very_active] }
+        themePreference: { type: string, enum: [light, dark] }
+        onboardingComplete: { type: boolean }
+        goals:
+          $ref: "#/components/schemas/DailyTargets"
+      required: [id, name, email, age, gender, heightCm, weightKg, activityLevel, themePreference, onboardingComplete, goals]
+    DailyTargets:
+      type: object
+      properties:
+        waterMl: { type: integer }
+        steps: { type: integer }
+        exerciseMinutes: { type: integer }
+        sleepHours: { type: number }
+      required: [waterMl, steps, exerciseMinutes, sleepHours]
+    RegisterInput:
+      type: object
+      properties:
+        name: { type: string, minLength: 2, maxLength: 100 }
+        email: { type: string, format: email }
+        password: { type: string, minLength: 8, maxLength: 128 }
+      required: [name, email, password]
+    LoginInput:
+      type: object
+      properties:
+        email: { type: string, format: email }
+        password: { type: string, minLength: 8, maxLength: 128 }
+      required: [email, password]
+    AuthResponse:
+      type: object
+      properties:
+        user:
+          $ref: "#/components/schemas/UserProfile"
+      required: [user]
+    ProfileInput:
+      type: object
+      properties:
+        name: { type: string, minLength: 2, maxLength: 100 }
+        age: { type: ["integer", "null"], minimum: 10, maximum: 120 }
+        gender: { type: string, maxLength: 20 }
+        heightCm: { type: ["number", "null"], exclusiveMinimum: 0 }
+        weightKg: { type: ["number", "null"], exclusiveMinimum: 0 }
+        activityLevel: { type: string, enum: [sedentary, light, moderate, active, very_active] }
+        themePreference: { type: string, enum: [light, dark] }
+        waterGoalMl: { type: integer, minimum: 250 }
+        stepsGoal: { type: integer, minimum: 500 }
+        exerciseGoalMinutes: { type: integer, minimum: 0 }
+        sleepGoalHours: { type: number, minimum: 1, maximum: 24 }
+      required: [name, age, gender, heightCm, weightKg, activityLevel, themePreference, waterGoalMl, stepsGoal, exerciseGoalMinutes, sleepGoalHours]
+    HealthRecord:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        date: { type: string, format: date }
+        waterMl: { type: integer }
+        steps: { type: integer }
+        exerciseMinutes: { type: integer }
+        sleepHours: { type: number }
+        sleepQuality: { type: ["integer", "null"] }
+        heartRateBpm: { type: ["integer", "null"] }
+        weightKg: { type: ["number", "null"] }
+        caloriesConsumed: { type: integer }
+        proteinGrams: { type: ["number", "null"] }
+        carbsGrams: { type: ["number", "null"] }
+        fatGrams: { type: ["number", "null"] }
+        mood: { type: ["string", "null"], enum: [very_sad, sad, neutral, happy, very_happy, null] }
+        stressLevel: { type: ["string", "null"], enum: [low, medium, high, extreme, null] }
+        wellnessScore: { type: integer }
+        notes: { type: ["string", "null"] }
+      required: [id, date, waterMl, steps, exerciseMinutes, sleepHours, sleepQuality, heartRateBpm, weightKg, caloriesConsumed, proteinGrams, carbsGrams, fatGrams, mood, stressLevel, wellnessScore, notes]
+    HealthRecordInput:
+      type: object
+      properties:
+        date: { type: string, format: date }
+        waterMl: { type: integer, minimum: 0 }
+        steps: { type: integer, minimum: 0 }
+        exerciseMinutes: { type: integer, minimum: 0 }
+        sleepHours: { type: number, minimum: 0, maximum: 24 }
+        sleepQuality: { type: ["integer", "null"], minimum: 1, maximum: 5 }
+        heartRateBpm: { type: ["integer", "null"], minimum: 30, maximum: 250 }
+        weightKg: { type: ["number", "null"], exclusiveMinimum: 0 }
+        caloriesConsumed: { type: integer, minimum: 0 }
+        proteinGrams: { type: ["number", "null"], minimum: 0 }
+        carbsGrams: { type: ["number", "null"], minimum: 0 }
+        fatGrams: { type: ["number", "null"], minimum: 0 }
+        mood: { type: ["string", "null"], enum: [very_sad, sad, neutral, happy, very_happy, null] }
+        stressLevel: { type: ["string", "null"], enum: [low, medium, high, extreme, null] }
+        notes: { type: ["string", "null"], maxLength: 500 }
+      required: [date, waterMl, steps, exerciseMinutes, sleepHours, caloriesConsumed]
+    IncrementInput:
+      type: object
+      properties:
+        metric: { type: string, enum: [waterMl, steps, exerciseMinutes] }
+        delta: { type: integer, minimum: 1, maximum: 10000 }
+      required: [metric, delta]
+    Goal:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        goalType: { type: string, enum: [water_ml, steps, exercise_min, sleep_hrs, weight_kg, calories_kcal] }
+        targetValue: { type: number }
+        currentValue: { type: number }
+        startDate: { type: string, format: date }
+        endDate: { type: ["string", "null"], format: date }
+        status: { type: string, enum: [active, completed, abandoned] }
+      required: [id, goalType, targetValue, currentValue, startDate, endDate, status]
+    GoalInput:
+      type: object
+      properties:
+        goalType: { type: string, enum: [water_ml, steps, exercise_min, sleep_hrs, weight_kg, calories_kcal] }
+        targetValue: { type: number, exclusiveMinimum: 0 }
+        startDate: { type: string, format: date }
+        endDate: { type: ["string", "null"], format: date }
+      required: [goalType, targetValue, startDate]
+    GoalUpdate:
+      type: object
+      properties:
+        targetValue: { type: number, exclusiveMinimum: 0 }
+        currentValue: { type: number, minimum: 0 }
+        endDate: { type: ["string", "null"], format: date }
+        status: { type: string, enum: [active, completed, abandoned] }
+    Reminder:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        title: { type: string }
+        category: { type: string, enum: [water, exercise, sleep, medication, break] }
+        timeOfDay: { type: string }
+        frequency: { type: string, enum: [daily, weekdays, weekends] }
+        isEnabled: { type: boolean }
+      required: [id, title, category, timeOfDay, frequency, isEnabled]
+    ReminderInput:
+      type: object
+      properties:
+        title: { type: string, minLength: 2, maxLength: 100 }
+        category: { type: string, enum: [water, exercise, sleep, medication, break] }
+        timeOfDay: { type: string, pattern: "^([01][0-9]|2[0-3]):[0-5][0-9]$" }
+        frequency: { type: string, enum: [daily, weekdays, weekends] }
+        isEnabled: { type: boolean }
+      required: [title, category, timeOfDay, frequency, isEnabled]
+    ReminderUpdate:
+      type: object
+      properties:
+        title: { type: string, minLength: 2, maxLength: 100 }
+        category: { type: string, enum: [water, exercise, sleep, medication, break] }
+        timeOfDay: { type: string, pattern: "^([01][0-9]|2[0-3]):[0-5][0-9]$" }
+        frequency: { type: string, enum: [daily, weekdays, weekends] }
+        isEnabled: { type: boolean }
+    AnalyticsSummary:
+      type: object
+      properties:
+        range: { type: string, enum: [7d, 30d, 90d] }
+        records:
+          type: array
+          items: { $ref: "#/components/schemas/HealthRecord" }
+        averages:
+          $ref: "#/components/schemas/DailyTargets"
+        wellnessAverage: { type: number }
+        completionRate: { type: number }
+      required: [range, records, averages, wellnessAverage, completionRate]
+    WellnessInsight:
+      type: object
+      properties:
+        headline: { type: string }
+        wellnessStatus: { type: string, enum: [Needs Attention, On Track, Exceeding Goals] }
+        insights:
+          type: array
+          items:
+            type: object
+            properties:
+              metric: { type: string }
+              analysis: { type: string }
+              microAction: { type: string }
+            required: [metric, analysis, microAction]
+        encouragement: { type: string }
+      required: [headline, wellnessStatus, insights, encouragement]
+    ChatInput:
+      type: object
+      properties:
+        message: { type: string, minLength: 1, maxLength: 1000 }
+      required: [message]
+    ChatResponse:
+      type: object
+      properties:
+        answer: { type: string }
+      required: [answer]
+    WeeklyDigest:
+      type: object
+      properties:
+        summary: { type: string }
+        wins:
+          type: array
+          items: { type: string }
+        focusAreas:
+          type: array
+          items: { type: string }
+        microAdjustments:
+          type: array
+          items: { type: string }
+      required: [summary, wins, focusAreas, microAdjustments]
+    DataExport:
+      type: object
+      properties:
+        profile: { $ref: "#/components/schemas/UserProfile" }
+        records:
+          type: array
+          items: { $ref: "#/components/schemas/HealthRecord" }
+        goals:
+          type: array
+          items: { $ref: "#/components/schemas/Goal" }
+        reminders:
+          type: array
+          items: { $ref: "#/components/schemas/Reminder" }
+      required: [profile, records, goals, reminders]
 

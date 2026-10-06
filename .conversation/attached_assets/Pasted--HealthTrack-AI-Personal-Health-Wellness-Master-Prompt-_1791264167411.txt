@@ -1,0 +1,662 @@
+# HealthTrack AI – Personal Health & Wellness Master Prompt
+
+You are an expert AI Systems Architect, Principal Full-Stack Engineer, and Senior UI/UX Designer.
+
+Your task is to build a complete, production-grade, end-to-end web application named **"HealthTrack AI – Personal Health & Wellness Tracker"** (`HealthTrack AI`) from scratch using the specified technology stack. Follow every instruction, schema, route, component, and validation rule detailed below. Do not leave placeholders, incomplete logic, unhandled errors, or skipped steps.
+
+---
+
+## 1. Header & System Persona Role
+
+* **Name:** HealthTrack AI – Personal Health & Wellness Tracker
+* **Role:** Full-Stack AI Engineer & System Architect
+* **Target Platform:** Replit / Node.js runtime with PostgreSQL environment
+* **Primary Goal:** Construct a fully functional, highly secure, production-grade health and habit tracking system integrated with Gemini 2.5 AI for personalized, non-diagnostic wellness insights and predictive habit analytics.
+
+---
+
+## 2. Core Mission Directive
+
+Build a modern, responsive, secure web application that enables users to record, aggregate, visualize, and analyze multi-dimensional personal health metrics (hydration, activity, sleep, cardiovascular metrics, body composition, nutrition, mood, stress, and medication compliance).
+
+The system must automatically calculate daily algorithmic **Wellness Scores**, surface interactive graphical analytics, manage goal targets with real-time feedback, trigger configurable web notifications/reminders, and interface with Google Gemini 2.5 (`@google/genai` SDK) to deliver safe, non-medical wellness evaluations, habit optimization advice, and intelligent weekly summaries.
+
+---
+
+## 3. Product Goal
+
+Provide individuals with a centralized, friction-free portal to cultivate long-term health habits. By converting fragmented health logs into clear visual trends and AI-driven daily insights, `HealthTrack AI` empowers users to understand lifestyle patterns without complexity, while ensuring strict data privacy, robust input validation, and medical safety boundaries.
+
+---
+
+## 4. Mandatory Features
+
+1. **Secure Authentication & RBAC:** Session/JWT-based authentication using `bcryptjs` password hashing, protected API endpoints, persistent user sessions, and full compliance with user data isolation.
+2. **Dynamic Onboarding & User Profile:** Multi-step onboarding to collect bio-metrics (age, height, baseline weight, activity tier, health goals) with automated initial daily target calculations (e.g., fluid intake based on body weight, step goals based on activity tier).
+3. **Interactive Health Dashboard:** Real-time visual overview featuring:
+* High-level metric KPI cards (Water, Steps, Exercise, Sleep, Heart Rate, Weight, Calories, Mood/Stress).
+* Dynamic **Daily Wellness Score** gauge (0–100 scale computed via weighted habit algorithm).
+* Interactive quick-log modals for single-click metric increments (e.g., +250ml water, +1000 steps).
+* Daily active goal checklist with real-time completion progress rings.
+
+
+4. **Comprehensive Health Records Ledger:** Dedicated data table with filtering, sorting, pagination, and multi-metric daily log editing/deletion with optimistic UI updates.
+5. **Interactive Analytics & Visualizations:** Recharts-driven visual suite displaying:
+* 7-day, 30-day, and 90-day step and activity bar charts.
+* Sleep duration vs. quality trend overlay.
+* Body weight trajectory line chart with target target line.
+* Mood vs. Stress correlation matrix.
+
+
+6. **Goal Management Engine:** Custom goal creation for any supported metric, auto-updating progress tracking, target dates, and status transitions (Active, Completed, Abandoned).
+7. **Reminders & Notification Center:** User-scheduled micro-reminders for water, movement breaks, sleep routines, and medications with web browser notification API integrations.
+8. **AI Wellness Assistant (`Gemini 2.5` Integrated):**
+* **Daily Insight Banner:** Auto-generated structured advisory card on the main dashboard based on current day vs. 7-day average metrics.
+* **Interactive Wellness Chat:** Natural language Q&A grounded exclusively in the logged user's historical context.
+* **Weekly Health Digest:** AI-driven synthesis evaluating overall progress, highlighting wins, and recommending minor habit micro-adjustments.
+
+
+9. **Settings & Data Sovereignty:** Light/Dark theme toggle, profile update forms, exported data dumps in structured JSON/CSV, and immediate account/data erasure (Right to be Forgotten).
+
+---
+
+## 5. Technology Requirements
+
+* **Frontend:** React.js (v18+), Vite, Tailwind CSS, Lucide React Icons, Recharts (for charts), Framer Motion (for smooth transitions), TanStack React Query (for server-state management), React Hook Form, Zod.
+* **Backend:** Node.js (v20+), Express.js (REST API architecture).
+* **Database:** Replit Postgres / PostgreSQL with `pg` connection pool or Drizzle ORM / Knex.js.
+* **AI Integration:** `@google/genai` official Node.js SDK leveraging `gemini-2.5-flash` model.
+* **Validation:** Zod schemas applied symmetrically on client forms and backend request middleware.
+* **Security:** `helmet` header security, `cors`, `express-rate-limit`, `bcryptjs` for password hashing, `jsonwebtoken` or `express-session` for session handling.
+
+---
+
+## 6. Application Pages (Routes)
+
+### Public Routes
+
+* `/` - High-converting Landing Page detailing core features, security promises, and medical disclaimers.
+* `/login` - Authentication portal with validation and error feedback.
+* `/register` - User sign-up page with real-time password strength metering.
+
+### Protected Routes (Requires Auth)
+
+* `/onboarding` - First-time user profile setup wizard.
+* `/dashboard` - Core control center (KPIs, Wellness Score, AI Daily Advice, Quick Actions).
+* `/records` - Detailed tabular record management page with date-picker and CRUD capabilities.
+* `/analytics` - Deep-dive visual trend analytics and multi-metric chart overlays.
+* `/goals` - Interactive goal setup, current targets, and history tracking.
+* `/reminders` - Reminder management portal and schedule configuration.
+* `/ai-assistant` - Dedicated conversational AI workspace for contextual wellness Q&A.
+* `/profile` - Bio-metric manager, health goal targets, and preferences.
+* `/settings` - Security preferences, dark/light themes, data export, and account deletion.
+
+---
+
+## 7. User Flow
+
+```
+[ Unauthenticated User ]
+       │
+       ▼
+  Landing Page (/) ────────► Login (/login) OR Register (/register)
+                                                    │
+                                                    ▼
+                                          [ Auth Successful ]
+                                                    │
+                                 ┌──────────────────┴──────────────────┐
+                                 ▼                                     ▼
+                     [ First Login: Is Profile Set? ]     [ Existing User ]
+                                 │                                     │
+                        No ──────┘                                     │
+                        │                                              │
+                        ▼                                              │
+                Onboarding Wizard                                      │
+               (/onboarding) ──────────────────────────────────────────┤
+                                                                       ▼
+                                                             Main Dashboard (/dashboard)
+                                                                       │
+             ┌─────────────────┬──────────────────┬────────────────────┼────────────────────┐
+             ▼                 ▼                  ▼                    ▼                    ▼
+     Health Ledger       Analytics Hub       Goals Portal       Reminders Config       AI Workspace
+      (/records)        (/analytics)          (/goals)           (/reminders)         (/ai-assistant)
+             │                 │                  │                    │                    │
+             └─────────────────┴──────────────────┴────────────────────┴────────────────────┘
+                                                   │
+                                                   ▼
+                                       Profile & Settings Portal
+                                        (/profile & /settings)
+
+```
+
+---
+
+## 8. Target Domains & Categorization
+
+The system operates across 8 core health domains:
+
+1. **Hydration:** Water intake tracking (ml / fluid oz / glasses).
+2. **Physical Activity:** Step counts, active exercise duration (minutes), estimated caloric burn (kcal).
+3. **Sleep Quality:** Total sleep duration (hours), sleep quality rating (1–5 scale).
+4. **Cardiovascular:** Resting heart rate (BPM), blood pressure (systolic/diastolic - optional log).
+5. **Body Composition:** Weight (kg/lbs), height (cm/ft-in), BMI (auto-calculated).
+6. **Nutrition:** Daily total caloric intake (kcal), macro split estimates (Protein, Carbs, Fats).
+7. **Psychological Well-being:** Mood state (Emoji / 5-point ordinal scale), perceived stress index (Low, Medium, High).
+8. **Pharmacological / Supplementation:** Medication reminders and adherence logging.
+
+---
+
+## 9. Form & Advisory Configuration
+
+### Daily Wellness Score Calculation Algorithm
+
+The Daily Wellness Score ($S \in [0, 100]$) is computed server-side or via dynamic utilities as a weighted sum of 5 baseline habits against personalized user daily goals:
+
+$$S = (W_{\text{water}} \cdot 0.20) + (A_{\text{exercise}} \cdot 0.25) + (S_{\text{sleep}} \cdot 0.25) + (P_{\text{steps}} \cdot 0.20) + (M_{\text{mood}} \cdot 0.10)$$
+
+Where each component score is capped at $100\%$:
+
+* $W_{\text{water}} = \min\left(100, \frac{\text{Logged Water}}{\text{Goal Water}} \times 100\right)$
+* $A_{\text{exercise}} = \min\left(100, \frac{\text{Logged Exercise Min}}{\text{Goal Exercise Min}} \times 100\right)$
+* $S_{\text{sleep}} = \min\left(100, \frac{\text{Logged Sleep Hours}}{\text{Goal Sleep Hours}} \times 100\right)$
+* $P_{\text{steps}} = \min\left(100, \frac{\text{Logged Steps}}{\text{Goal Steps}} \times 100\right)$
+* $M_{\text{mood}} = \text{Mood Rating (1 to 5)} \times 20$
+
+### Mandatory Non-Medical Disclaimer
+
+Every page footer, AI interaction modal, and generated report MUST continuously render this standardized notice:
+
+> **Health Disclaimer:** *HealthTrack AI is designed exclusively for general wellness tracking and personal habit awareness. It is not a medical device, nor does it provide medical advice, diagnosis, or clinical treatment recommendations. Always seek the advice of a qualified healthcare provider regarding any medical condition.*
+
+---
+
+## 10. Database Schema (Production SQL for PostgreSQL)
+
+Execute the following DDL script to instantiate the system schema:
+
+```sql
+-- Enable UUID extension
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
+-- USERS TABLE
+CREATE TABLE users (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    name VARCHAR(100) NOT NULL,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    age INT CHECK (age > 0 AND age < 120),
+    gender VARCHAR(20) DEFAULT 'unspecified',
+    height_cm NUMERIC(5,2) CHECK (height_cm > 0),
+    weight_kg NUMERIC(5,2) CHECK (weight_kg > 0),
+    activity_level VARCHAR(30) DEFAULT 'moderate', -- sedentary, light, moderate, active, very_active
+    theme_preference VARCHAR(10) DEFAULT 'dark',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- USER GOALS TABLE
+CREATE TABLE goals (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    goal_type VARCHAR(50) NOT NULL, -- water_ml, steps, exercise_min, sleep_hrs, weight_kg, calories_kcal
+    target_value NUMERIC(10,2) NOT NULL CHECK (target_value > 0),
+    current_value NUMERIC(10,2) DEFAULT 0 CHECK (current_value >= 0),
+    start_date DATE NOT NULL DEFAULT CURRENT_DATE,
+    end_date DATE,
+    status VARCHAR(20) DEFAULT 'active' CHECK (status IN ('active', 'completed', 'abandoned')),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- DAILY HEALTH RECORDS TABLE
+CREATE TABLE health_records (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    date DATE NOT NULL DEFAULT CURRENT_DATE,
+    water_ml INT DEFAULT 0 CHECK (water_ml >= 0),
+    steps INT DEFAULT 0 CHECK (steps >= 0),
+    exercise_minutes INT DEFAULT 0 CHECK (exercise_minutes >= 0),
+    sleep_hours NUMERIC(4,2) DEFAULT 0 CHECK (sleep_hours >= 0 AND sleep_hours <= 24),
+    heart_rate_bpm INT CHECK (heart_rate_bpm IS NULL OR (heart_rate_bpm > 30 AND heart_rate_bpm < 250)),
+    weight_kg NUMERIC(5,2) CHECK (weight_kg IS NULL OR weight_kg > 0),
+    calories_consumed INT DEFAULT 0 CHECK (calories_consumed >= 0),
+    mood VARCHAR(20) CHECK (mood IN ('very_sad', 'sad', 'neutral', 'happy', 'very_happy')),
+    stress_level VARCHAR(20) CHECK (stress_level IN ('low', 'medium', 'high', 'extreme')),
+    wellness_score INT DEFAULT 0 CHECK (wellness_score >= 0 AND wellness_score <= 100),
+    notes TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT unique_user_daily_record UNIQUE (user_id, date)
+);
+
+-- REMINDERS TABLE
+CREATE TABLE reminders (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    title VARCHAR(100) NOT NULL,
+    category VARCHAR(50) NOT NULL, -- water, exercise, sleep, medication, break
+    time_of_day TIME NOT NULL,
+    frequency VARCHAR(30) DEFAULT 'daily', -- daily, weekdays, weekends, custom
+    is_enabled BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- AI INSIGHTS CACHE TABLE
+CREATE TABLE ai_insights (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    insight_type VARCHAR(50) NOT NULL, -- daily_summary, weekly_digest, habit_recommendation
+    content JSONB NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- INDEXES FOR FAST QUERYING
+CREATE INDEX idx_health_records_user_date ON health_records(user_id, date DESC);
+CREATE INDEX idx_goals_user_status ON goals(user_id, status);
+CREATE INDEX idx_reminders_user_enabled ON reminders(user_id, is_enabled);
+
+```
+
+---
+
+## 11. Row Level Security (RLS) / Data Isolation Rules
+
+To protect health data privacy across sessions:
+
+1. **Application-Level Isolation:** All Express middleware must extract `req.user.id` from validated JWT tokens or encrypted sessions.
+2. **SQL Context Safeguard:** Every single database query operating on `health_records`, `goals`, `reminders`, or `ai_insights` MUST explicitly restrict execution using `WHERE user_id = $1`.
+3. Direct ORM or Raw Query Parametrization is mandatory. String concatenations in SQL statements are strictly forbidden.
+4. Attempting to access, modify, or delete records matching an ID not owned by `req.user.id` must trigger an immediate HTTP `403 Forbidden` response and an internal security audit log.
+
+---
+
+## 12. Backend API Routes
+
+All API endpoints reside under `/api/v1` and enforce `application/json` payloads.
+
+### Authentication Routes (`/api/v1/auth`)
+
+* `POST /register` - Validate input, hash password with `bcryptjs` (salt rounds = 12), insert user, return JWT token and user profile object.
+* `POST /login` - Validate credentials, return JWT token.
+* `POST /logout` - Invalidate session/cookie.
+* `GET /me` - Return currently authenticated user profile.
+
+### User Profile & Goals Routes (`/api/v1/user`)
+
+* `PUT /profile` - Update bio-metrics, goals, and targets.
+* `GET /goals` - Fetch active and historical user goals.
+* `POST /goals` - Create a new health goal target.
+* `PUT /goals/:id` - Update goal target or status.
+* `DELETE /goals/:id` - Remove a goal.
+
+### Health Records Routes (`/api/v1/records`)
+
+* `GET /` - Fetch paginated daily logs (supports query params `startDate`, `endDate`, `limit`).
+* `GET /today` - Fetch or initialize today's daily record for the current user.
+* `POST /` - Insert or Upsert (`ON CONFLICT (user_id, date) DO UPDATE`) today's log. Automatically recalculates `wellness_score`.
+* `PATCH /increment` - Quick-increment a specific metric (e.g., `{ metric: "water_ml", delta: 250 }`).
+* `DELETE /:id` - Erase a health record entry.
+
+### Analytics Routes (`/api/v1/analytics`)
+
+* `GET /summary?range=7d|30d|90d` - Aggregate metric averages, total volume, trajectory percentages, and score distribution.
+
+### Reminders Routes (`/api/v1/reminders`)
+
+* `GET /` - List user reminders.
+* `POST /` - Create a reminder entry.
+* `PUT /:id` - Update status/timing.
+* `DELETE /:id` - Delete a reminder.
+
+### AI Assistant Routes (`/api/v1/ai`)
+
+* `GET /daily-insight` - Fetch or trigger today's Gemini 2.5 structured wellness insight.
+* `POST /chat` - Stream or respond to contextual wellness Q&A based on recent 14-day history.
+* `GET /weekly-digest` - Synthesize historical data into an actionable weekly report.
+
+---
+
+## 13. Gemini SDK Setup & Server-Side Security
+
+The system uses the official `@google/genai` package. **Never call Gemini APIs directly from the frontend React bundle.** All calls MUST be executed server-side within Node.js controller routines.
+
+### Server Initialization (`src/lib/gemini.js`)
+
+```javascript
+import { GoogleGenAI } from '@google/genai';
+
+if (!process.env.GEMINI_API_KEY) {
+  throw new Error("CRITICAL: GEMINI_API_KEY environment variable is not configured.");
+}
+
+export const ai = new GoogleGenAI({
+  apiKey: process.env.GEMINI_API_KEY,
+});
+
+export const GEMINI_FLASH_MODEL = 'gemini-2.5-flash';
+
+```
+
+---
+
+## 14. AI System Prompt
+
+When dispatching requests to Gemini 2.5, inject the following system context:
+
+```text
+You are "HealthTrack Coach", an empathetic, data-informed personal wellness AI guide built into the HealthTrack AI platform.
+
+YOUR PRIMARY DIRECTIVE:
+Provide encouraging, actionable, and personalized lifestyle, habit, hydration, fitness, and sleep coaching based strictly on the user's logged health metrics.
+
+STRICT BOUNDARIES AND SAFETY DIRECTIVES:
+1. YOU ARE NOT A MEDICAL DOCTOR AND DO NOT PROVIDE MEDICAL DIAGNOSES, CLINICAL EVALUATIONS, OR PRESCRIPTIONS.
+2. If the user presents symptoms suggestive of medical emergencies (e.g., extreme chest pain, acute shortness of breath, severe heart rate spikes above 180 BPM at rest, sudden numbness), IMMEDIATELY instruct them to call local emergency services (e.g., 911 or 112) or consult a physician.
+3. Always maintain a supportive, clear, non-judgmental tone.
+4. Frame all feedback as general wellness and habit recommendations.
+5. Base your analysis on comparing current daily numbers against their set goals and 7-day moving averages.
+
+```
+
+---
+
+## 15. Detailed AI Prompts (with required JSON Schemas)
+
+### Prompt 1: Daily Structured Wellness Advisory
+
+* **Model:** `gemini-2.5-flash`
+* **Output Mode:** Structured JSON (`responseSchema` enforced)
+
+#### Input Prompt to Gemini:
+
+```text
+Analyze the following user health record for today compared against their daily goals and past 7-day averages.
+
+User Bio: Age {{age}}, Activity Level: {{activityLevel}}
+Today's Metrics:
+- Water: {{todayWater}} / Goal: {{goalWater}} ml
+- Steps: {{todaySteps}} / Goal: {{goalSteps}}
+- Exercise: {{todayExercise}} / Goal: {{goalExercise}} min
+- Sleep: {{todaySleep}} / Goal: {{goalSleep}} hrs
+- Heart Rate: {{todayHR}} BPM
+- Mood: {{todayMood}}, Stress Level: {{todayStress}}
+- Calculated Wellness Score: {{wellnessScore}} / 100
+
+7-Day Averages:
+- Water: {{avgWater}} ml | Steps: {{avgSteps}} | Sleep: {{avgSleep}} hrs
+
+Generate a JSON object containing:
+1. "headline": A short 1-sentence supportive takeaway.
+2. "wellnessStatus": "Needs Attention", "On Track", or "Exceeding Goals".
+3. "insights": Array of 3 specific, actionable observation objects (metric, analysis, microAction).
+4. "encouragement": A motivational closing sentence.
+
+```
+
+#### Enforced JSON Response Schema:
+
+```json
+{
+  "type": "OBJECT",
+  "properties": {
+    "headline": { "type": "STRING" },
+    "wellnessStatus": { "type": "STRING", "enum": ["Needs Attention", "On Track", "Exceeding Goals"] },
+    "insights": {
+      "type": "ARRAY",
+      "items": {
+        "type": "OBJECT",
+        "properties": {
+          "metric": { "type": "STRING" },
+          "analysis": { "type": "STRING" },
+          "microAction": { "type": "STRING" }
+        },
+        "required": ["metric", "analysis", "microAction"]
+      }
+    },
+    "encouragement": { "type": "STRING" }
+  },
+  "required": ["headline", "wellnessStatus", "insights", "encouragement"]
+}
+
+```
+
+---
+
+## 16. Zod Validation Requirements
+
+Implement robust schemas across client forms and backend middlewares.
+
+### Example Schemas (`src/shared/schemas.js`)
+
+```javascript
+import { z } from 'zod';
+
+export const registerSchema = z.object({
+  name: z.string().min(2, "Name must be at least 2 characters"),
+  email: z.string().email("Invalid email address"),
+  password: z.string().min(8, "Password must be at least 8 characters"),
+  age: z.number().int().min(10).max(120),
+  height_cm: z.number().positive("Height must be positive"),
+  weight_kg: z.number().positive("Weight must be positive"),
+  activity_level: z.enum(['sedentary', 'light', 'moderate', 'active', 'very_active']),
+});
+
+export const healthRecordSchema = z.object({
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Date must be YYYY-MM-DD"),
+  water_ml: z.number().nonnegative(),
+  steps: z.number().int().nonnegative(),
+  exercise_minutes: z.number().int().nonnegative(),
+  sleep_hours: z.number().min(0).max(24),
+  heart_rate_bpm: z.number().int().min(30).max(250).nullable().optional(),
+  weight_kg: z.number().positive().nullable().optional(),
+  calories_consumed: z.number().int().nonnegative(),
+  mood: z.enum(['very_sad', 'sad', 'neutral', 'happy', 'very_happy']),
+  stress_level: z.enum(['low', 'medium', 'high', 'extreme']),
+  notes: z.string().max(500).optional(),
+});
+
+```
+
+---
+
+## 17. Frontend Components List
+
+Structure the React frontend with cleanly modularized components:
+
+1. **Layout & Navigation:**
+* `Navbar`: Displays app title, current score pill, quick-log action button, user avatar, and theme switcher.
+* `Sidebar`: Collapsible navigation links for desktop and mobile bottom toolbar.
+* `Footer`: Renders system copyright and standard medical disclaimer.
+
+
+2. **Dashboard Widgets:**
+* `WellnessScoreGauge`: Animated semi-circular SVG dial rendering 0–100 score.
+* `MetricCard`: Interactive card with icon, current vs. target progress bar, and quick increment button.
+* `AIDailyAdviceCard`: Displays structured output from Gemini with dynamic badge indicators.
+* `QuickLogModal`: Quick entry modal for updating metrics in real-time.
+
+
+3. **Analytics & Visualizations:**
+* `ActivityBarChart`: Recharts bar representation for weekly step and exercise totals.
+* `SleepTrendChart`: Line overlay comparing sleep hours vs sleep quality ratings.
+* `WeightProgressChart`: Interactive trend chart plotting actual weight logs against goal trajectories.
+
+
+4. **Goals & Reminders:**
+* `GoalProgressBar`: Visual indicator showing percentage completed with color transitions.
+* `ReminderToggle`: Card component with toggle switch for web notification reminders.
+
+
+5. **AI Assistant Workspace:**
+* `AIChatWindow`: Streamlined chat interface with avatar bubbles, auto-scroll, quick suggested prompt pills, and disclaimer headers.
+
+
+
+---
+
+## 18. Security Requirements
+
+* **Password Storage:** Hash passwords with `bcryptjs` using 12 salt rounds. Never log or store plain-text secrets.
+* **Session Security:** Issue HTTP-only, SameSite=Strict JWT cookies or secure bearer tokens with a 7-day expiration.
+* **Headers & Protection:** Configure `helmet` to set secure HTTP headers, enforce strict CORS policies limiting requests to the web domain, and deploy `express-rate-limit` (100 requests per 15 minutes per IP).
+* **Environment Isolation:** Zero credentials or private keys in source code. Access keys exclusively via `process.env`.
+* **Sanitization:** Strip HTML tags from all user text notes using `xss` or Zod sanitization rules before persisting to PostgreSQL.
+
+---
+
+## 19. Environment Variables Template
+
+Create a `.env.example` file at the root directory:
+
+```env
+# SERVER CONFIGURATION
+PORT=5000
+NODE_ENV=development
+CLIENT_URL=http://localhost:5000
+
+# DATABASE CONFIGURATION (Replit Postgres)
+DATABASE_URL=postgresql://username:password@localhost:5432/healthtrack_db
+
+# SECURITY & AUTHENTICATION
+JWT_SECRET=super_secret_jwt_key_replace_in_production_min_32_chars
+SESSION_SECRET=super_secret_session_key
+
+# GOOGLE GEMINI AI SDK CONFIGURATION
+GEMINI_API_KEY=AIzaSyYourActualGeminiApiKeyHere
+
+```
+
+---
+
+## 20. Suggested Folder Structure
+
+```text
+health-tracker-app/
+├── package.json
+├── .env.example
+├── .gitignore
+├── README.md
+├── server/
+│   ├── index.js
+│   ├── db/
+│   │   ├── pool.js
+│   │   └── schema.sql
+│   ├── middleware/
+│   │   ├── auth.js
+│   │   ├── validate.js
+│   │   └── errorHandler.js
+│   ├── routes/
+│   │   ├── auth.routes.js
+│   │   ├── user.routes.js
+│   │   ├── records.routes.js
+│   │   ├── analytics.routes.js
+│   │   ├── reminders.routes.js
+│   │   └── ai.routes.js
+│   ├── services/
+│   │   ├── scoreCalculator.js
+│   │   └── gemini.service.js
+│   └── controllers/
+│       ├── auth.controller.js
+│       ├── records.controller.js
+│       └── ai.controller.js
+└── client/
+    ├── index.html
+    ├── vite.config.js
+    ├── tailwind.config.js
+    └── src/
+        ├── main.jsx
+        ├── App.jsx
+        ├── components/
+        │   ├── common/
+        │   │   ├── Navbar.jsx
+        │   │   ├── Sidebar.jsx
+        │   │   ├── Footer.jsx
+        │   │   └── Disclaimer.jsx
+        │   ├── dashboard/
+        │   │   ├── WellnessScoreGauge.jsx
+        │   │   ├── MetricCard.jsx
+        │   │   ├── QuickLogModal.jsx
+        │   │   └── AIDailyAdviceCard.jsx
+        │   ├── analytics/
+        │   │   ├── ActivityBarChart.jsx
+        │   │   └── SleepTrendChart.jsx
+        │   └── ai/
+        │       └── AIChatWindow.jsx
+        ├── pages/
+        │   ├── Landing.jsx
+        │   ├── Login.jsx
+        │   ├── Register.jsx
+        │   ├── Onboarding.jsx
+        │   ├── Dashboard.jsx
+        │   ├── Records.jsx
+        │   ├── Analytics.jsx
+        │   ├── Goals.jsx
+        │   ├── Reminders.jsx
+        │   ├── AIAssistant.jsx
+        │   └── Profile.jsx
+        ├── context/
+        │   └── AuthContext.jsx
+        ├── hooks/
+        │   └── useHealthRecords.js
+        ├── services/
+        │   └── api.js
+        └── utils/
+            └── formatters.js
+
+```
+
+---
+
+## 21. Implementation Phases
+
+Follow this disciplined 5-step sequence during construction:
+
+* **Phase 1: Database & Core Server Architecture**
+* Provision PostgreSQL tables using the provided schema DDL.
+* Set up Express server, middleware (`helmet`, `cors`, JSON parsing, rate limiting), DB pool connection, and error handlers.
+
+
+* **Phase 2: Auth System & User Profile Management**
+* Build Zod-validated authentication endpoints (`/register`, `/login`, `/me`).
+* Wire React AuthContext, persistent token storage, and protected frontend routing.
+* Implement onboarding wizard for initial biometric & goal setup.
+
+
+* **Phase 3: Health Records Engine & Dashboard**
+* Implement CRUD routes and daily score calculation logic (`scoreCalculator.js`).
+* Build Dashboard UI, KPI cards, interactive quick-log modal, and dynamic `WellnessScoreGauge`.
+
+
+* **Phase 4: Visual Analytics & Notification Subsystem**
+* Integrate Recharts graphics (`ActivityBarChart`, `SleepTrendChart`, `WeightProgressChart`).
+* Implement goal tracking and local/browser notification reminders.
+
+
+* **Phase 5: Gemini 2.5 AI Integration & UI Polish**
+* Connect `@google/genai` SDK on the backend.
+* Build `AIDailyAdviceCard` and `AIChatWindow` components using structured JSON schemas and safety context.
+* Ensure dark/light mode accessibility, mobile layout responsiveness, and verify mandatory disclaimers across all routes.
+
+
+
+---
+
+## 22. Acceptance Criteria
+
+The build is complete only when all criteria pass:
+
+1. **Database Rigor:** PostgreSQL schema deploys cleanly with foreign keys, checks, unique constraints, and indexes.
+2. **Data Isolation:** Queries enforce `WHERE user_id = $1` context security across all operations.
+3. **Score Accuracy:** Daily Wellness Score automatically recomputes upon log creation or incremental updates.
+4. **Interactive Dashboard:** Quick-log buttons immediately update visual stats, progress rings, and local gauge indicators.
+5. **AI Safety & Utility:** Gemini 2.5 backend endpoints correctly parse responses according to JSON schemas, handle API errors gracefully, and include required safety disclaimers.
+6. **Responsiveness:** UI adapts fluidly across mobile (375px), tablet (768px), and desktop (1440px+) screen sizes without horizontal scroll overflow.
+7. **Input Validation:** Client forms and backend endpoints reject invalid payloads with helpful user-facing errors.
+
+---
+
+## 23. Final Instruction to Coding Agent
+
+> You are now ready to construct **HealthTrack AI – Personal Health & Wellness Tracker**.
+> Execute the implementation step-by-step following the 5 Implementation Phases above. Begin by building the database schema and server setup, then proceed through authentication, dashboard metrics, analytics charts, and Gemini AI integration. Ensure clean code, complete file structures, thorough error handling, and robust typing/validation throughout.
+> **Do not skip files, use pseudo-code, or leave unwritten placeholder code.** Begin implementation now.
